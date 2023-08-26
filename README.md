@@ -45,11 +45,8 @@
 
 4. Configure the `config.json` file with your MySQL database connection details.
 
-5. Run the script: `python main.py`.
+5. Run the script: `python pyTableEdit.py`.
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit issues and pull requests.
 
 ## License
 
