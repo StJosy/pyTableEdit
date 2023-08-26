@@ -18,11 +18,21 @@
 
 1. Install the required packages by running `pip install PyQt6 mysql-connector-python`.
 
-2. Configure the `config.json` file with your MySQL database connection details.
+2. Configure the config.json file with your MySQL database connection details including the desired table name. The config.json file should have the following structure:
+   ```json
+   {
+       "host": "your_database_host",
+       "user": "your_database_user",
+       "password": "your_database_password",
+       "database": "your_database_name",
+       "table": "your_table_name"
+   }
+   ```
 
-3. Run the script and open the PyQt6 MySQL Table Editor interface.
 
-4. Enter the ID of the record you want to edit, make the necessary changes, and click the "Save" button to update the record in the database.
+4. Run the script and open the PyQt6 MySQL Table Editor interface.
+
+5. Enter the ID of the record you want to edit, make the necessary changes, and click the "Save" button to update the record in the database.
 
 ## Screenshots
 
@@ -51,7 +61,3 @@
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-You can copy and paste this Markdown text into your README.md file on GitHub. Don't forget to replace placeholders like `your-username` and include any relevant screenshots or adjustments to match your actual project.

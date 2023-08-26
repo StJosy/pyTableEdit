@@ -29,17 +29,20 @@ logging.basicConfig(
 
 
 class EditFormWidget(QWidget):
-    def __init__(self, config_file: str, table_name: str):
+    def __init__(self, config_file: str ):
         super().__init__()
         
         self.logger = logging.getLogger(__name__)
         
         self.edits = {}
+        
+        
 
         # Open File
         try:
             with open(config_file, "r") as json_file:
                 connection_details = json.load(json_file)
+                self.table_name = connection_details.pop('table')
         except FileNotFoundError:
             self.logger.error(f"Error opening file: {config_file}. {e}")
             sys.exit()
@@ -54,7 +57,7 @@ class EditFormWidget(QWidget):
         self.db_cursor = self.db_connection.cursor(dictionary=True)
 
         # Obtain column names
-        query = f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{table_name}';"
+        query = f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{self.table_name}';"
         self.db_cursor.execute(query)
         self.filed_names = [dict_item['COLUMN_NAME'] for dict_item in self.db_cursor.fetchall()]
         self.init_ui()
@@ -108,7 +111,7 @@ class EditFormWidget(QWidget):
     def search_by_id(self) -> None:
         self.clear_form()
         search_id = int(self.search_input.text())
-        query = f"SELECT * FROM orders WHERE Id = {search_id}"
+        query = f"SELECT * FROM {self.table_name} WHERE Id = {search_id}"
         self.db_cursor.execute(query, {"status": 1})
         
         try:
@@ -141,7 +144,7 @@ class EditFormWidget(QWidget):
             if updates:
                 search_id = int(self.search_input.text())
                 update_query = (
-                    f"UPDATE orders SET {', '.join(updates)} WHERE Id = {search_id}"
+                    f"UPDATE {self.table_name} SET {', '.join(updates)} WHERE Id = {search_id}"
                 )
                 msg = ""
                 try:
@@ -164,7 +167,7 @@ def main():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     window = QMainWindow()
-    edit_form_widget = EditFormWidget("datab.json", "orders")
+    edit_form_widget = EditFormWidget("config.json")
     window.setCentralWidget(edit_form_widget)
     window.setWindowTitle("Python Table Editor")
     window.setGeometry(100, 100, 400, 600)
