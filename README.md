@@ -1,7 +1,5 @@
 # PyQt6 MySQL Table Editor
 
-![PyQt6 Logo](https://www.riverbankcomputing.com/static/Docs/PyQt6/pyqt6_small.png)
-
 **PyQt6 MySQL Table Editor** is a Python script that utilizes the PyQt6 library to create a graphical user interface for editing records in a MySQL database table. This tool provides a convenient way to interact with your MySQL database and make updates to specific records.
 
 ## Features
@@ -33,10 +31,6 @@
 4. Run the script and open the PyQt6 MySQL Table Editor interface.
 
 5. Enter the ID of the record you want to edit, make the necessary changes, and click the "Save" button to update the record in the database.
-
-## Screenshots
-
-![Application Screenshot](screenshots/application_screenshot.png)
 
 ## Prerequisites
 
