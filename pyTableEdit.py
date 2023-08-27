@@ -55,8 +55,8 @@ class EditFormWidget(QWidget):
 
         # Obtain column names
         query = f"""
-            SELECT COLUMN_NAME
-            FROM INFORMATION_SCHEMA.COLUMNS
+            SELECT COLUMN_NAME \
+            FROM INFORMATION_SCHEMA.COLUMNS \
             WHERE TABLE_NAME = '{self.table_name}';
         """
         self.db_cursor.execute(query)
