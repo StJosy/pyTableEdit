@@ -108,9 +108,13 @@ class EditFormWidget(QWidget):
 
         self.current_result = None  # Reset current result
 
-    def search_by_id(self) -> None:
+    def search_by_id(self) -> bool:
+        try:
+            search_id = int(self.search_input.text().strip())
+        except:
+            return False
         self.clear_form()
-        search_id = int(self.search_input.text())
+        
         query = f"SELECT * FROM {self.table_name} WHERE Id = {search_id}"
         self.db_cursor.execute(query, {"status": 1})
         
@@ -123,6 +127,7 @@ class EditFormWidget(QWidget):
                 self.current_result = None
         except mysql.connector.Error as e:
             self.logger.error(f"Error executing query. {e}")
+        return True
 
     def fill_form_with_data(self, data) -> None:
         for row_key in data:
