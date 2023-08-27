@@ -22,15 +22,14 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler("application.log"),
-        logging.StreamHandler(sys.stdout)
+        logging.StreamHandler(sys.stdout),
     ],
-    encoding='utf-8'
+    encoding="utf-8",
 )
 
 
 class EditFormWidget(QWidget):
     def __init__(self, config_file: str):
-
         super().__init__()
 
         self.logger = logging.getLogger(__name__)
@@ -40,7 +39,7 @@ class EditFormWidget(QWidget):
         try:
             with open(config_file, "r") as json_file:
                 connection_details = json.load(json_file)
-                self.table_name = connection_details.pop('table')
+                self.table_name = connection_details.pop("table")
         except FileNotFoundError:
             self.logger.error(f"Error opening file: {config_file}")
             sys.exit()
@@ -62,8 +61,7 @@ class EditFormWidget(QWidget):
         """
         self.db_cursor.execute(query)
         self.filed_names = [
-            dict_item['COLUMN_NAME']
-            for dict_item in self.db_cursor.fetchall()
+            dict_item["COLUMN_NAME"] for dict_item in self.db_cursor.fetchall()
         ]
         self.init_ui()
         self.populate_empty_form()
@@ -151,11 +149,9 @@ class EditFormWidget(QWidget):
 
             if updates:
                 search_id = int(self.search_input.text())
-                update_query = (
-                    f"""UPDATE {self.table_name}
-                    SET {', '.join(updates)}
+                update_query = f"""UPDATE {self.table_name} \
+                    SET {', '.join(updates)} \
                     WHERE Id = {search_id}"""
-                )
                 try:
                     self.db_cursor.execute(update_query)
                     self.db_connection.commit()
