@@ -16,7 +16,6 @@ import mysql.connector
 import json
 import logging
 
-#logging.basicConfig(filename='application.log', encoding='utf-8', level=logging.DEBUG)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,19 +23,18 @@ logging.basicConfig(
     handlers=[
         logging.FileHandler("application.log"),
         logging.StreamHandler(sys.stdout)
-    ]
+    ],
+    encoding='utf-8'
 )
 
 
 class EditFormWidget(QWidget):
-    def __init__(self, config_file: str ):
+    def __init__(self, config_file: str):
+
         super().__init__()
-        
+
         self.logger = logging.getLogger(__name__)
-        
         self.edits = {}
-        
-        
 
         # Open File
         try:
@@ -44,7 +42,7 @@ class EditFormWidget(QWidget):
                 connection_details = json.load(json_file)
                 self.table_name = connection_details.pop('table')
         except FileNotFoundError:
-            self.logger.error(f"Error opening file: {config_file}. {e}")
+            self.logger.error(f"Error opening file: {config_file}")
             sys.exit()
 
         # Connect do database
@@ -57,9 +55,16 @@ class EditFormWidget(QWidget):
         self.db_cursor = self.db_connection.cursor(dictionary=True)
 
         # Obtain column names
-        query = f"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{self.table_name}';"
+        query = f"""
+            SELECT COLUMN_NAME
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_NAME = '{self.table_name}';
+        """
         self.db_cursor.execute(query)
-        self.filed_names = [dict_item['COLUMN_NAME'] for dict_item in self.db_cursor.fetchall()]
+        self.filed_names = [
+            dict_item['COLUMN_NAME']
+            for dict_item in self.db_cursor.fetchall()
+        ]
         self.init_ui()
         self.populate_empty_form()
 
@@ -71,8 +76,8 @@ class EditFormWidget(QWidget):
         self.search_label = QLabel("Search by ID:")
         self.search_input = QLineEdit()
 
-        #sometimes we needs import mask
-        #self.search_input.setInputMask("999999")
+        # sometimes we needs import mask
+        # self.search_input.setInputMask("999999")
 
         self.search_button = QPushButton("Search")
         # self.search_button.setStyleSheet(u"  color:LightSeaGreen;")
@@ -111,13 +116,13 @@ class EditFormWidget(QWidget):
     def search_by_id(self) -> bool:
         try:
             search_id = int(self.search_input.text().strip())
-        except:
+        except Exception:
             return False
         self.clear_form()
-        
+
         query = f"SELECT * FROM {self.table_name} WHERE Id = {search_id}"
         self.db_cursor.execute(query, {"status": 1})
-        
+
         try:
             result = self.db_cursor.fetchone()
             if result:
@@ -133,7 +138,6 @@ class EditFormWidget(QWidget):
         for row_key in data:
             self.edits[row_key].setText(str(data[row_key]))
 
-   
     def save_changes(self) -> None:
         if hasattr(self, "current_result"):
             updates = []
@@ -141,17 +145,17 @@ class EditFormWidget(QWidget):
             for filed_name in self.filed_names:
                 current_field_value = self.edits[filed_name].text().strip()
                 stored_value = self.current_result[filed_name]
-                
-                if str(current_field_value) != str(stored_value):
-                   updates.append(f"`{filed_name}` = '{current_field_value}'") 
 
+                if str(current_field_value) != str(stored_value):
+                    updates.append(f"`{filed_name}` = '{current_field_value}'")
 
             if updates:
                 search_id = int(self.search_input.text())
                 update_query = (
-                    f"UPDATE {self.table_name} SET {', '.join(updates)} WHERE Id = {search_id}"
+                    f"""UPDATE {self.table_name}
+                    SET {', '.join(updates)}
+                    WHERE Id = {search_id}"""
                 )
-                msg = ""
                 try:
                     self.db_cursor.execute(update_query)
                     self.db_connection.commit()
@@ -159,7 +163,7 @@ class EditFormWidget(QWidget):
 
                 except mysql.connector.Error as err:
                     self.logger.error(f"Query Error: {err}")
-               
+
             else:
                 print("No changes to save.")
         else:
