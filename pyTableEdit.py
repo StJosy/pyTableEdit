@@ -42,14 +42,15 @@ class EditFormWidget(QWidget):
                 self.table_name = connection_details.pop("table")
         except FileNotFoundError:
             self.logger.error(f"Error opening file: {config_file}")
-            sys.exit()
+            raise FileNotFoundError
+            # sys.exit()
 
         # Connect do database
         try:
             self.db_connection = mysql.connector.connect(**connection_details)
         except Exception as e:
             self.logger.error(f"Error connecting to database. {e}")
-            sys.exit()
+            # sys.exit()
 
         self.db_cursor = self.db_connection.cursor(dictionary=True)
 
@@ -60,7 +61,7 @@ class EditFormWidget(QWidget):
             WHERE TABLE_NAME = '{self.table_name}';
         """
         self.db_cursor.execute(query)
-        self.filed_names = [
+        self.field_names = [
             dict_item["COLUMN_NAME"] for dict_item in self.db_cursor.fetchall()
         ]
         self.init_ui()
@@ -93,7 +94,7 @@ class EditFormWidget(QWidget):
         self.setLayout(self.layout)
 
     def populate_empty_form(self) -> None:
-        for col_name in self.filed_names:
+        for col_name in self.field_names:
             label = QLabel(col_name)
             self.edits[col_name] = QLineEdit(objectName=col_name)
             self.form_layout.addRow(label, self.edits[col_name])
@@ -106,7 +107,7 @@ class EditFormWidget(QWidget):
         self.form_layout.addItem(QSpacerItem(10, 10))
 
     def clear_form(self) -> None:
-        for col_name in self.filed_names:
+        for col_name in self.field_names:
             self.edits[col_name].clear()
 
         self.current_result = None  # Reset current result
@@ -115,6 +116,7 @@ class EditFormWidget(QWidget):
         try:
             search_id = int(self.search_input.text().strip())
         except Exception:
+            print("You have to type ineger")
             return False
         self.clear_form()
 
@@ -138,25 +140,25 @@ class EditFormWidget(QWidget):
 
     def save_changes(self) -> None:
         if hasattr(self, "current_result"):
-            updates = []
+            update_field = []
+            update_val = []
 
-            for filed_name in self.filed_names:
-                current_field_value = self.edits[filed_name].text().strip()
-                stored_value = self.current_result[filed_name]
+            for field_name in self.field_names:
+                current_field_value = self.edits[field_name].text().strip()
+                stored_value = self.current_result[field_name]
 
                 if str(current_field_value) != str(stored_value):
-                    updates.append(f"`{filed_name}` = '{current_field_value}'")
+                    update_field.append(f"{field_name}=%s")
+                    update_val.append(current_field_value)
 
-            if updates:
+            if update_field:
                 search_id = int(self.search_input.text())
-                update_query = f"""UPDATE {self.table_name} \
-                    SET {', '.join(updates)} \
-                    WHERE Id = {search_id}"""
+                update_query = f"UPDATE {self.table_name} set {', '.join(update_field)} WHERE Id = %s"
+                update_val.append(search_id)
                 try:
-                    self.db_cursor.execute(update_query)
+                    self.db_cursor.execute(update_query, update_val)
                     self.db_connection.commit()
-                    self.logger.info(f"Query DONE: {update_query}")
-
+                    self.logger.info(f"Query DONE: {self.db_cursor.statement}")
                 except mysql.connector.Error as err:
                     self.logger.error(f"Query Error: {err}")
 
@@ -172,7 +174,11 @@ def main():
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     window = QMainWindow()
-    edit_form_widget = EditFormWidget("config.json")
+    try:
+        edit_form_widget = EditFormWidget("config.json")
+    except Exception:
+        sys.exit()
+
     window.setCentralWidget(edit_form_widget)
     window.setWindowTitle("Python Table Editor")
     window.setGeometry(100, 100, 400, 600)
