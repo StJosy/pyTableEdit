@@ -60,7 +60,7 @@ class EditFormWidget(QWidget):
             FROM INFORMATION_SCHEMA.COLUMNS \
             WHERE TABLE_NAME = %s;
         """
-        self.db_cursor.execute(query,(self.table_name,))
+        self.db_cursor.execute(query, (self.table_name,))
         self.field_names = [
             dict_item["COLUMN_NAME"] for dict_item in self.db_cursor.fetchall()
         ]
@@ -119,10 +119,10 @@ class EditFormWidget(QWidget):
             print("You have to type ineger")
             return False
         self.clear_form()
-        
+
         try:
             query = f"SELECT * FROM {self.table_name}  WHERE id = %(id)s"
-            self.db_cursor.execute(query,{"status": 1,'id':search_id})
+            self.db_cursor.execute(query, {"status": 1, "id": search_id})
             result = self.db_cursor.fetchone()
             if result:
                 self.current_result = result
@@ -139,22 +139,22 @@ class EditFormWidget(QWidget):
 
     def save_changes(self) -> None:
         if hasattr(self, "current_result"):
-            update_dict={}
+            update_data = {}
 
             for field_name in self.field_names:
                 current_field_value = self.edits[field_name].text().strip()
                 stored_value = self.current_result[field_name]
 
                 if str(current_field_value) != str(stored_value):
-                    update_dict[field_name] = current_field_value
+                    update_data[field_name] = current_field_value
 
-            if update_dict:
-                update_field_formated_list = [f'{e} = %({e})s' for e in update_dict]
-                update_query = f"UPDATE {self.table_name} set {', '.join(update_field_formated_list)} WHERE id = %(id)s"
-                update_dict['id'] = int(self.search_input.text())
-                
+            if update_data:
+                update_field_list = [f"{e} = %({e})s" for e in update_data]
+                update_stmt = f"UPDATE {self.table_name} set {', '.join(update_field_list)} WHERE id = %(id)s"
+                update_data["id"] = int(self.search_input.text())
+
                 try:
-                    self.db_cursor.execute(update_query, update_dict)
+                    self.db_cursor.execute(update_stmt, update_data)
                     self.db_connection.commit()
                     self.logger.info(f"Query DONE: {self.db_cursor.statement}")
                 except mysql.connector.Error as err:
