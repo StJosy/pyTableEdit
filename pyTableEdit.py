@@ -150,7 +150,7 @@ class EditFormWidget(QWidget):
                     update_data[field_name] = current_field_value
 
             if update_data:
-                update_field_list = [f"{e} = %({e})s" for e in update_data]
+                update_field_list = [f"`{e}` = %({e})s" for e in update_data]
                 update_stmt = f"UPDATE {self.table_name} set {', '.join(update_field_list)} WHERE id = %(id)s"
                 update_data["id"] = int(self.search_input.text())
 
