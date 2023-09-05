@@ -81,6 +81,7 @@ class EditFormWidget(QWidget):
         self.search_button = QPushButton("Search")
         # self.search_button.setStyleSheet(u"  color:LightSeaGreen;")
         self.search_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.search_input.returnPressed.connect(self.search_by_id)
         self.search_button.clicked.connect(self.search_by_id)
         self.search_layout.addWidget(self.search_label)
         self.search_layout.addWidget(self.search_input)
