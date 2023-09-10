@@ -12,9 +12,11 @@ from PyQt6.QtWidgets import (
     QSpacerItem,
 )
 from PyQt6.QtCore import Qt
-import mysql.connector
+#import mysql.connector
+import mysql.connector.pooling
 import json
 import logging
+from dataclasses import dataclass
 
 
 logging.basicConfig(
@@ -27,7 +29,11 @@ logging.basicConfig(
     encoding="utf-8",
 )
 
-
+@dataclass
+class conn:
+    db_connection:None
+    db_cursor:None
+    
 class EditFormWidget(QWidget):
     def __init__(self, config_file: str):
         super().__init__()
@@ -40,32 +46,46 @@ class EditFormWidget(QWidget):
             with open(config_file, "r") as json_file:
                 connection_details = json.load(json_file)
                 self.table_name = connection_details.pop("table")
+                self.connection_details = connection_details
         except FileNotFoundError:
             self.logger.error(f"Error opening file: {config_file}")
             raise FileNotFoundError
             # sys.exit()
-
-        # Connect do database
-        try:
-            self.db_connection = mysql.connector.connect(**connection_details)
-        except Exception as e:
-            self.logger.error(f"Error connecting to database. {e}")
-            # sys.exit()
-
-        self.db_cursor = self.db_connection.cursor(dictionary=True)
-
+      
+        self.db_cursor = None
+        self.db_connection = None
+        
+        dbhandler = self.connection
+        
         # Obtain column names
         query = """
             SELECT COLUMN_NAME \
             FROM INFORMATION_SCHEMA.COLUMNS \
             WHERE TABLE_NAME = %s;
         """
-        self.db_cursor.execute(query, (self.table_name,))
+        dbhandler.db_cursor.execute(query, (self.table_name,))
         self.field_names = [
-            dict_item["COLUMN_NAME"] for dict_item in self.db_cursor.fetchall()
+            dict_item["COLUMN_NAME"] for dict_item in dbhandler.db_cursor.fetchall()
         ]
         self.init_ui()
         self.populate_empty_form()
+        
+    @property
+    def connection(self):
+        try:
+            if not self.db_connection or not self.db_connection.is_connected():
+                if self.db_cursor:
+                    self.db_cursor.close()
+                if self.db_connection:
+                    self.db_connection.close()
+                self.db_connection = mysql.connector.connect(**self.connection_details)
+                self.db_cursor = self.db_connection.cursor(dictionary=True)
+                print("Reconnected successfully.")
+        except Exception as e:
+            print(f'Error: {str(e)}')
+        return conn(db_connection=self.db_connection, db_cursor=self.db_cursor)
+
+ 
 
     def init_ui(self) -> None:
         self.layout = QVBoxLayout()
@@ -114,6 +134,7 @@ class EditFormWidget(QWidget):
         self.current_result = None  # Reset current result
 
     def search_by_id(self) -> bool:
+        dbhandler = self.connection
         try:
             search_id = int(self.search_input.text().strip())
         except Exception:
@@ -123,8 +144,8 @@ class EditFormWidget(QWidget):
 
         try:
             query = f"SELECT * FROM {self.table_name}  WHERE id = %(id)s"
-            self.db_cursor.execute(query, {"status": 1, "id": search_id})
-            result = self.db_cursor.fetchone()
+            dbhandler.db_cursor.execute(query, {"status": 1, "id": search_id})
+            result = dbhandler.db_cursor.fetchone()
             if result:
                 self.current_result = result
                 self.fill_form_with_data(result)
@@ -139,6 +160,7 @@ class EditFormWidget(QWidget):
             self.edits[row_key].setText(str(data[row_key]))
 
     def save_changes(self) -> None:
+        dbhandler = self.connection
         if hasattr(self, "current_result"):
             update_data = {}
 
@@ -155,9 +177,9 @@ class EditFormWidget(QWidget):
                 update_data["id"] = int(self.search_input.text())
 
                 try:
-                    self.db_cursor.execute(update_stmt, update_data)
-                    self.db_connection.commit()
-                    self.logger.info(f"Query DONE: {self.db_cursor.statement}")
+                    dbhandler.db_cursor.execute(update_stmt, update_data)
+                    dbhandler.db_connection.commit()
+                    self.logger.info(f"Query DONE: {dbhandler.db_cursor.statement}")
                 except mysql.connector.Error as err:
                     self.logger.error(f"Query Error: {err}")
 
