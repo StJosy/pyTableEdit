@@ -118,6 +118,8 @@ class EditFormWidget(QWidget):
         for col_name in self.field_names:
             label = QLabel(col_name)
             self.edits[col_name] = QLineEdit(objectName=col_name)
+            self.edits[col_name].returnPressed.connect(self.save_changes)
+           
             self.form_layout.addRow(label, self.edits[col_name])
 
         self.form_layout.addItem(QSpacerItem(10, 10))
