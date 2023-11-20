@@ -103,6 +103,7 @@ class EditFormWidget(QWidget):
         self.search_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.search_input.returnPressed.connect(self.search_by_id)
         self.search_button.clicked.connect(self.search_by_id)
+        
         self.search_layout.addWidget(self.search_label)
         self.search_layout.addWidget(self.search_input)
         self.search_layout.addWidget(self.search_button)
@@ -123,10 +124,11 @@ class EditFormWidget(QWidget):
             self.form_layout.addRow(label, self.edits[col_name])
 
         self.form_layout.addItem(QSpacerItem(10, 10))
-        save_button = QPushButton("Save")
-        save_button.setCursor(Qt.CursorShape.PointingHandCursor)
-        save_button.clicked.connect(self.save_changes)
-        self.form_layout.addRow(save_button)
+        self.save_button = QPushButton("Save")
+        self.save_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.save_button.clicked.connect(self.save_changes)
+        self.save_button.setEnabled(False)
+        self.form_layout.addRow(self.save_button)
         self.form_layout.addItem(QSpacerItem(10, 10))
 
     def clear_form(self) -> None:
@@ -138,13 +140,19 @@ class EditFormWidget(QWidget):
     def search_by_id(self) -> bool:
         dbhandler = self.connection
         try:
-            search_id = int(self.search_input.text().strip())
+            field = self.search_input.text().strip()
+            if len(field) > 0:
+                search_id = int(self.search_input.text().strip())
+            else:
+                print("You have to type row_id")
+                return False
         except Exception:
-            print("You have to type ineger")
+            print("You have to type integer")
             return False
         self.clear_form()
 
         try:
+            self.save_button.setEnabled(True)
             query = f"SELECT * FROM {self.table_name}  WHERE id = %(id)s"
             dbhandler.db_cursor.execute(query, {"status": 1, "id": search_id})
             result = dbhandler.db_cursor.fetchone()
@@ -190,6 +198,7 @@ class EditFormWidget(QWidget):
         else:
             print("Record not found.")
         self.search_input.setText("")
+        self.save_button.setEnabled(False)
         self.clear_form()
 
 
